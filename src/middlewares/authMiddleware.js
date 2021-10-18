@@ -5,7 +5,7 @@ const authMiddleware = (req, res, next) => {
   try {
     const auth = req.headers.authorization;
 
-    if (!authorization) {
+    if (!auth) {
       return res.status(400).json({ message: 'Please make sure your request has an Authorization header' });
     }
 
