@@ -1,87 +1,106 @@
-const express = require('express');
-const router = express.Router();
+const Note = require('../models/noteModel');
 
-const { getAllNotes, addNote, getNote, checkNoteById, deleteNoteById } = require('../services/notesServices');
+class NoteController {
+  async getUserNotes(req, res) {
+    try {
+      const { offset, limit } = req.query;
+      const options = {
+        skip: offset ? parseInt(offset) : 0,
+        limit: limit ? parseInt(limit) : 0,
+      };
+      const notes = await Note.find({ userId: req.user.userId }).skip(options.skip).limit(options.limit);
 
-router.get('/', async (req, res) => {
-  const { userId } = req.user;
-
-  if (!userId) {
-    return res.status(400).json({ message: 'Bad request' });
+      return res.status(200).json({
+        offset: paginationOps.skip,
+        limit: paginationOps.limit,
+        count: notes.length,
+        notes,
+      });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
   }
 
-  try {
-    const notes = await getAllNotes(userId);
-    res.status(200).json({ notes });
-  } catch (err) {
-    res.status(400).json({ message: 'Bad request' });
-  }
-});
+  async addUserNote(req, res) {
+    try {
+      const { userId } = req.user;
+      const noteText = req.body.text;
 
-router.post('/', async (req, res) => {
-  const { userId } = req.user;
-  const { text } = req.body;
+      if (!noteText) {
+        return res.status(400).json({ message: 'Add text' });
+      }
 
-  if (!userId || !text) {
-    return res.status(400).json({ message: 'Bad request' });
-  }
+      const addNote = new Note({
+        userId,
+        completed: false,
+        text: noteText,
+        createdDate: Date.now(),
+      });
 
-  try {
-    await addNote(userId, text);
-    res.status(200).json({ message: 'Success' });
-  } catch (err) {
-    res.status(400).json({ message: 'Bad request' });
-  }
-});
+      await addNote.save();
 
-router.get('/:id', async (req, res) => {
-  const noteId = req.path.slice(1);
-  const { userId } = req.user;
-
-  if (!noteId || !userId) {
-    return res.status(400).json({ message: 'Bad request' });
+      return res.status(200).json({ message: 'Success' });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
   }
 
-  try {
-    const note = await getNote(noteId, userId);
-    res.status(200).json({ note });
-  } catch (err) {
-    res.status(400).json({ message: 'Bad request' });
-  }
-});
+  async checkUserNoteById(req, res) {
+    try {
+      const id = req.params.id;
+      const note = await Note.findOne({ _id: id });
 
-router.patch('/:id', async (req, res) => {
-  const { userId } = req.user;
-  const { id } = req.params;
+      note.completed = !note.completed;
 
-  if (!userId || !id) {
-    return res.status(400).json({ message: 'Bad request' });
-  }
+      await note.save();
 
-  try {
-    await checkNoteById(id, userId);
-    res.status(200).json({ message: 'Success' });
-  } catch (err) {
-    res.status(400).json({ message: 'Bad request' });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  const { userId } = req.user;
-  const { id } = req.params;
-
-  if (!userId || !id) {
-    return res.status(400).json({ message: 'Bad request' });
+      res.status(200).json({ message: 'Success' });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
   }
 
-  try {
-    await deleteNoteById(id, userId);
-    res.status(200).json({ message: 'Success' });
-  } catch (err) {
-    res.status(400).json({ message: 'Bad request' });
-  }
-});
+  async deleteUserNoteById(req, res) {
+    try {
+      const id = req.params.id;
 
-module.exports = {
-  notesRouter: router,
-};
+      await Note.findByIdAndRemove({ _id: id });
+
+      res.status(200).json({ message: 'Success' });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+
+  async getUserNoteById(req, res) {
+    try {
+      const id = req.params.id;
+
+      const note = await Note.findOne({ _id: id });
+
+      if (note) {
+        res.status(200).json({ note });
+      } else {
+        res.status(400).json({ message: 'Not found' });
+      }
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+
+  async updateUserNoteById(req, res) {
+    try {
+      const { userId } = req.user;
+      const id = req.params.id;
+      const updateText = req.body.text;
+
+      await Note.findOneAndUpdate({ _id: id, userId }, { text: updateText });
+
+      res.status(200).json({ message: 'Success' });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+}
+
+module.exports = new NoteController();

@@ -48,6 +48,77 @@ paths:
             $ref: '#/definitions/Error'
       security:
         - jwt_token: []
+    delete:
+      tags:
+        - 'User'
+      summary: "Delete user's profile"
+      description: 'User can delete only his own profile info'
+      operationId: 'deleteProfile'
+      consumes:
+        - 'application/json'
+      produces:
+        - 'application/json'
+      responses:
+        '200':
+          description: 'Success'
+          schema:
+            type: 'object'
+            properties:
+              message:
+                type: string
+                example: 'Success'
+        '400':
+          description: 'Bad request'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+        - jwt_token: []
+    patch:
+      tags:
+        - 'User'
+      summary: "Change user's password"
+      description: "Change user's password"
+      operationId: 'changeProfilePassword'
+      consumes:
+        - 'application/json'
+      produces:
+        - 'application/json'
+      parameters:
+        - in: 'body'
+          name: 'new_password'
+          schema:
+            type: 'object'
+            required:
+              - oldPassword
+              - newPassword
+            properties:
+              oldPassword:
+                type: string
+              newPassword:
+                type: string
+      responses:
+        '200':
+          description: 'Success'
+          schema:
+            type: 'object'
+            properties:
+              message:
+                type: string
+                example: 'Success'
+        '400':
+          description: 'Bad request'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+        - jwt_token: []
   /api/auth/register:
     post:
       tags:
@@ -229,6 +300,49 @@ paths:
             properties:
               note:
                 $ref: '#/definitions/Note'
+        '400':
+          description: 'Bad request'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+        - jwt_token: []
+    put:
+      tags:
+        - 'Notes'
+      summary: "Update user's note by id"
+      description: "Update user's note by id"
+      operationId: 'updateUserNoteById'
+      consumes:
+        - 'application/json'
+      produces:
+        - 'application/json'
+      parameters:
+        - in: 'path'
+          name: 'id'
+          description: "Note's id"
+          required: true
+          type: string
+        - in: 'body'
+          name: 'Note payload'
+          schema:
+            required:
+              - text
+            properties:
+              text:
+                type: 'string'
+      responses:
+        '200':
+          description: 'Success'
+          schema:
+            type: 'object'
+            properties:
+              message:
+                type: string
+                example: 'Success'
         '400':
           description: 'Bad request'
           schema:

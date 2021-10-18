@@ -1,30 +1,25 @@
 const jwt = require('jsonwebtoken');
+const secret = process.env.SECRET_KEY;
 
 const authMiddleware = (req, res, next) => {
-  const { authorization } = req.headers;
-
-  if (!authorization) {
-    return res.status(401).json({ message: 'Please, provide "authorization" header' });
-  }
-
-  const [, token] = authorization.split(' ');
-
-  if (!token) {
-    return res.status(401).json({ message: 'Please, include token to request' });
-  }
-
   try {
-    const tokenPayload = jwt.verify(token, 'secret');
-    req.user = {
-      userId: tokenPayload._id,
-      email: tokenPayload.email,
-    };
+    const auth = req.headers.authorization;
+
+    if (!authorization) {
+      return res.status(400).json({ message: 'Please make sure your request has an Authorization header' });
+    }
+
+    if (!token) {
+      return res.status(400).json({ message: 'Add token to request' });
+    }
+    const token = auth.split(' ')[1];
+    const payload = jwt.verify(token, secret);
+    req.user = payload;
+
     next();
-  } catch (err) {
-    res.status(401).json({ message: err.message });
+  } catch (e) {
+    res.status(400).json({ message: e.message });
   }
 };
 
-module.exports = {
-  authMiddleware,
-};
+module.exports = authMiddleware;
