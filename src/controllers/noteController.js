@@ -3,16 +3,14 @@ const Note = require('../models/noteModel');
 class NoteController {
   async getUserNotes(req, res) {
     try {
-      const { offset, limit } = req.query;
-      const options = {
-        skip: offset ? parseInt(offset) : 0,
-        limit: limit ? parseInt(limit) : 0,
-      };
-      const notes = await Note.find({ userId: req.user.userId }).skip(options.skip).limit(options.limit);
+      const limit = parseInt(req.query.limit || '0');
+      const offset = parseInt(req.query.offset || '0');
+
+      const notes = await Note.find({ userId: req.user.id }).select('-__v').skip(offset).limit(limit);
 
       return res.status(200).json({
-        offset: paginationOps.skip,
-        limit: paginationOps.limit,
+        offset,
+        limit,
         count: notes.length,
         notes,
       });
@@ -23,7 +21,7 @@ class NoteController {
 
   async addUserNote(req, res) {
     try {
-      const { userId } = req.user;
+      const { id: userId } = req.user;
       const noteText = req.body.text;
 
       if (!noteText) {
@@ -90,7 +88,7 @@ class NoteController {
 
   async updateUserNoteById(req, res) {
     try {
-      const { userId } = req.user;
+      const { id: userId } = req.user;
       const id = req.params.id;
       const updateText = req.body.text;
 

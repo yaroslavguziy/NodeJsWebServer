@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const userController = require('../controllers/userController');
+const UserController = require('../controllers/userController');
 
-router.get('/me', userController.getUser);
-router.delete('/me', userController.deleteUser);
-router.patch('/me', userController.changeUserPassword);
+router.get('/me', UserController.getUser);
+router.delete('/me', UserController.deleteUser);
+router.patch('/me', UserController.changeUserPassword);
 
 module.exports = router;

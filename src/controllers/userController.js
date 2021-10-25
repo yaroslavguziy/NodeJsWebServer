@@ -1,52 +1,71 @@
 const User = require('../models/userModel');
+const bcrypt = require('bcryptjs');
 
 class UserController {
   async getUser(req, res) {
     try {
-      const userId = req.user.userId;
-      const userInfo = await User.findOne({ _id: userId });
+      const user = await User.findOne({
+        username: req.user.username,
+      });
 
-      const userDetails = {
-        _id: userInfo._id,
-        username: userInfo.username,
-        createdDate: userInfo.createdDate,
-      };
-      res.status(200).send({ user: userDetails });
+      if (!user) {
+        return res.status(400).json({ message: 'No user' });
+      }
+
+      res.status(200).json({
+        user: {
+          _id: user._id,
+          username: user.username,
+          createdDate: user.createdAt,
+        },
+      });
     } catch (e) {
-      res.status(400).send({ message: e.message });
+      res.status(500).json({ message: 'Internal server error' });
     }
   }
 
   async deleteUser(req, res) {
     try {
-      const userId = req.user.userId;
-      await User.findByIdAndRemove(userId);
-      res.status(200).send({ message: 'Success' });
+      User.findOneAndRemove({ _id: req.user.id }, err => {
+        if (err) {
+          res.status(400).json({ message: 'Can not delete' });
+          return;
+        }
+
+        res.status(200).json({ message: 'Success' });
+      });
     } catch (e) {
-      res.status(400).send({ message: e.message });
+      res.status(500).json({ message: 'Internal server error' });
     }
   }
 
   async changeUserPassword(req, res) {
     try {
-      const userId = req.user.userId;
-      const { oldPassword, newPassword } = req.body;
-      const user = await User.findOne({ _id: userId });
+      const oldPassword = req.body.oldPassword;
+      const newPassword = req.body.newPassword;
+      const user = await User.findOne({
+        username: req.user.username,
+      });
 
-      const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
-
-      if (!isOldPasswordValid) {
-        return res.status(400).send({ message: 'Invalid old password' });
+      if (!user) {
+        res.status(400).json({ message: 'User not found' });
+        return;
       }
 
-      const newHashPassword = await bcrypt.hash(newPassword, 10);
+      const passwordEqual = await bcrypt.compare(oldPassword, user.password);
 
-      await User.updateOne({ _id: userId }, { password: newHashPassword });
+      if (!passwordEqual) {
+        res.status(400).json({ message: 'Incorrect password' });
+        return;
+      }
 
-      res.status(200).send({ message: 'Success' });
+      user.password = await bcrypt.hash(newPassword, 7);
+      await user.save();
     } catch (e) {
-      res.status(400).send({ message: e.message });
+      res.status(500).json({ message: 'Internal server error' });
+      return;
     }
+    res.status(200).json({ message: 'Success' });
   }
 }
 
